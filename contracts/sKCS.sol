@@ -401,6 +401,14 @@ contract sKCS is IsKCS,SKCSBase {
             return; 
         }
 
+        // Claim pending rewards before voting for the validator
+        // 
+        // Warning: If there are pending rewards from the validator,
+        //    calling "vote" will automatically claim the pending rewards 
+        //    and will result in wrong kcsBalances.buffer. 
+        //    
+        kcsBalances.buffer += _claimPendingRewards(validator);
+
         // processing to integer
         uint256 amount = kcsBalances.buffer / VOTE_UNIT;
         uint256 staked = amount * VOTE_UNIT;
