@@ -521,8 +521,9 @@ contract sKCS is IsKCS,SKCSBase {
     // 
 
     receive() external payable{
-        // TODO: event
         require(AddressUpgradeable.isContract(msg.sender), "only contract");
+
+        emit Receive(msg.sender, msg.value, block.number);
     }
 
 

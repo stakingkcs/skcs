@@ -189,6 +189,7 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
     event ClaimPendingRewards(address sender, uint256 height, uint256 amount);
     event SetProtocolFeeRate(address sender, uint256 rate);
     event ClaimProtocolFee(address sender, uint256 indexed height, uint256 amount);
+    event Receive(address indexed sender, uint256 amount, uint256 height);
 
 
     //
