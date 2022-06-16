@@ -520,10 +520,10 @@ contract sKCS is IsKCS,SKCSBase {
     // fall back function
     // 
 
-    receive() external payable{
+    receive() external payable {
         require(AddressUpgradeable.isContract(msg.sender), "only contract");
 
-        emit Receive(msg.sender, msg.value, block.number);
+        emit Receive(msg.sender, msg.value);
     }
 
 
