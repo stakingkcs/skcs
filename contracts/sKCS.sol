@@ -78,7 +78,7 @@ contract sKCS is IsKCS,SKCSBase {
         require(msg.value > 0, "invalid amount");
 
         (uint256 num, uint256 dem) = exchangeRate();
-        uint256 shares = msg.value * num / dem;
+        uint256 shares = msg.value * dem / num;
 
         _depositKCS(receiver, msg.value, shares);
 
@@ -239,6 +239,7 @@ contract sKCS is IsKCS,SKCSBase {
 
     /// @param _weight is the weight of validator, _weight ∈ (0, 100]
     function addUnderlyingValidator(address _val, uint256 _weight) external onlyOwner  override {
+        require(VALIDATOR_CONTRACT.isActiveValidator(_val), "active validator only");
 
         require(_val != address(0), "invalid address");
         require(_weight > 0 && _weight <= 100, "invalid weight");
@@ -319,6 +320,7 @@ contract sKCS is IsKCS,SKCSBase {
             } else if (_validators[val].stakedKCS == 0){
                 
                 protocolParams.sumOfWeight -= _validators[val].weight;
+                _validators[val] = ValidatorInfo(address(0), 0, 0, 0, 0, 0, 0);
                 _disablingPool.remove(val); 
             }else{
                 i++;   
@@ -519,7 +521,8 @@ contract sKCS is IsKCS,SKCSBase {
     // 
 
     receive() external payable{
-        // TODO: event 
+        // TODO: event
+        require(AddressUpgradeable.isContract(msg.sender), "only contract");
     }
 
 
@@ -586,7 +589,7 @@ contract sKCS is IsKCS,SKCSBase {
 
         // calculate shares to mint 
         (uint256 num, uint256 dem) = exchangeRate();
-        shares = assets * num / dem;
+        shares = assets * dem / num;
 
         _depositKCS(receiver, assets, shares);
 

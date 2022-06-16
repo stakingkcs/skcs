@@ -12,3 +12,4 @@ artifacts
 docs/
 
 .openzeppelin
+contracts/interfaces/.openzeppelin

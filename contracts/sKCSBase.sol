@@ -21,6 +21,9 @@ import "./interfaces/IWKCS.sol";
 ///      SKCSBase also includes some common internal methods shared by different facets. 
 contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgradeable,ERC20VotesUpgradeable {
 
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+
+
     /// Maximum protocol fee: 20%
     uint256 public constant MAX_PROTOCOL_FEE = 2000;
     uint256 public constant VOTE_UNIT = 1e18;
@@ -217,6 +220,11 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
         require(_val != address(0), "invalid address");
         uint256 before = address(this).balance;
 
+        uint256 pending = VALIDATOR_CONTRACT.pendingReward(_val, address(this));
+        if (pending == 0) {
+            return 0;
+        }
+
         VALIDATOR_CONTRACT.claimReward(_val);
 
         uint256 amount = address(this).balance - before;
@@ -232,7 +240,7 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
         if(totalAmount == 0){
             return (0,0);
         }
-        feeAmount = totalAmount * 1e12 * protocolParams.protocolFee / 10000 / 1e12;
+        feeAmount = totalAmount * 1e12 * protocolParams.protocolFee / (10000 * 1e12);
         leftAmount = totalAmount - feeAmount;
     }
 
@@ -247,10 +255,15 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
     /// @notice including staked amount and pending rewards of all validators
     function _totalAmountOfValidators() internal view returns (uint256 staked, uint256 pendingRewards) {
 
-         for (uint8 i = 0; i < activeValidators.length; i++) {
-             staked +=  _validators[activeValidators[i]].stakedKCS;
-             pendingRewards += VALIDATOR_CONTRACT.pendingReward(_validators[activeValidators[i]].val, address(this));
-         }
+        for (uint8 i = 0; i < activeValidators.length; i++) {
+            staked +=  _validators[activeValidators[i]].stakedKCS;
+            pendingRewards += VALIDATOR_CONTRACT.pendingReward(_validators[activeValidators[i]].val, address(this));
+        }
+
+        for (uint8 i = 0; i < _disablingPool.length(); i++) {
+            address val = _disablingPool.at(i);
+           staked += _validators[val].stakedKCS;
+        }
     }
 
     
