@@ -221,6 +221,7 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
         require(_val != address(0), "invalid address");
         uint256 before = address(this).balance;
 
+        // @audit Fix Item 4: Unchecked pendingReward before claiming rewards
         uint256 pending = VALIDATOR_CONTRACT.pendingReward(_val, address(this));
         if (pending == 0) {
             return 0;
@@ -241,6 +242,7 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
         if(totalAmount == 0){
             return (0,0);
         }
+        // @audit Fix Item 2: Continuous division
         feeAmount = totalAmount * 1e12 * protocolParams.protocolFee / (10000 * 1e12);
         leftAmount = totalAmount - feeAmount;
     }
@@ -253,17 +255,26 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
         return total;
     }
 
-    /// @notice including staked amount and pending rewards of all validators
-    function _totalAmountOfValidators() internal view returns (uint256 staked, uint256 pendingRewards) {
+    /// @return staked The total amount of KCS staked in validators 
+    /// @return pendingRewards The total amount of pending rewards from all validators 
+    /// @return residual If we are redeeming from a validator, the actualRedeeming amount will always be
+    ///         greater than or equal to the userRedeeming. The difference between actualRedeeming and userRedeeming
+    ///         is the residual, and it will be put into the buffer later. 
+    function _totalAmountOfValidators() internal view returns (uint256 staked, uint256 pendingRewards, uint256 residual) {
 
         for (uint8 i = 0; i < activeValidators.length; i++) {
-            staked +=  _validators[activeValidators[i]].stakedKCS;
+            address val = activeValidators[i];
+            // @audit Item 3: Unhandled staked amount
+            staked +=  _validators[val].stakedKCS;
+            residual += (_validators[val].actualRedeeming - _validators[val].userRedeeming);
             pendingRewards += VALIDATOR_CONTRACT.pendingReward(_validators[activeValidators[i]].val, address(this));
         }
 
+        // @audit Item 3: Unhandled staked amount
         for (uint8 i = 0; i < _disablingPool.length(); i++) {
             address val = _disablingPool.at(i);
-           staked += _validators[val].stakedKCS;
+            staked += _validators[val].stakedKCS;  
+            residual += (_validators[val].actualRedeeming - _validators[val].userRedeeming);
         }
     }
 
