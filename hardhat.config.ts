@@ -46,10 +46,12 @@ const config: HardhatUserConfig = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
-    hardhat:{
-      allowUnlimitedContractSize: process.env.UNLIMITED_CONTRACT_SIZE == "true",
-      hardfork: "berlin" // kcc
+    testnet: {
+      url: "https://rpc-testnet.kcc.network",
     },
+    mainnet: {
+      url: "https://rpc-mainnet.kcc.network",
+    }
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
