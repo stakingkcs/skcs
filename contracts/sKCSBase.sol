@@ -273,8 +273,15 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
         // @audit Item 3: Unhandled staked amount
         for (uint8 i = 0; i < _disablingPool.length(); i++) {
             address val = _disablingPool.at(i);
-            staked += _validators[val].stakedKCS;  
-            residual += (_validators[val].actualRedeeming - _validators[val].userRedeeming);
+            // @audit: gas saving 
+            // 
+            // _validators[val].stakedKCS == 0 
+            //  _validators[val].userRedeeming == 
+            // 
+            // staked += _validators[val].stakedKCS;  
+            // residual += (_validators[val].actualRedeeming - _validators[val].userRedeeming);
+            residual += _validators[val].actualRedeeming;
+            
         }
     }
 

@@ -450,9 +450,6 @@ contract sKCS is IsKCS,SKCSBase {
         address available;
         for (uint8 i = 0; i < activeValidators.length; i++) {
             ValidatorInfo storage info = _validators[activeValidators[i]];
-            if (_disablingPool.contains(activeValidators[i])) {
-                continue;
-            }
             int256 pri = int256((info.stakedKCS * 1e9 / totalStaked)) - int256(info.weight * 1e9 / protocolParams.sumOfWeight);
             if (pri <= minWeight) {
                 minWeight = pri;
