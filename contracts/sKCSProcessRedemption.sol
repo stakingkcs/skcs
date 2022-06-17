@@ -137,6 +137,9 @@ contract sKCSProcessRedemptionsFacet is SKCSBase, IsKCSProcessRedemptionRequests
 
 
         // update selectedValidator
+        // @audit Item 3: Unhandled staked amount
+        // notice: (selectedValidator.actualRedeeming - selectedValidator.userRedeeming) KCS still belongs to
+        // sKCS holders. 
         selectedValidator.stakedKCS -= actualAmountRedeemFromKCCStaking;
         selectedValidator.actualRedeeming = actualAmountRedeemFromKCCStaking;
         selectedValidator.userRedeeming = amountRedeemFromKCCStaking;
@@ -258,7 +261,7 @@ contract sKCSProcessRedemptionsFacet is SKCSBase, IsKCSProcessRedemptionRequests
     /// @dev Return zero address if _availablePool is empty. 
     function _getValidatorForRedeeming() internal view returns (address) {
        
-        (uint totalStaked, ) = _totalAmountOfValidators();
+        (uint totalStaked,, ) = _totalAmountOfValidators();
 
         int256 maxWeight = type(int256).min;
         address available = address(0);

@@ -11,4 +11,5 @@ interface IValidators {
     /// @dev calling withdraw will not automatically claim pending rewards
     function withdraw(address _val) external;
     function isWithdrawable(address _user, address _val) external view returns (bool);
+    function isActiveValidator(address _val) external view returns (bool);
 }

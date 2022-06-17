@@ -64,4 +64,9 @@ contract ValidatorsMock is IValidators{
     function isWithdrawable(address _user, address _val) external override view returns (bool){
         return validatorsVotes[_val].revoking != 0;
     }
+
+    function isActiveValidator(address _val) external override view returns (bool) {
+        return true;
+    }
+
 }

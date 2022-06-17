@@ -78,7 +78,8 @@ contract sKCS is IsKCS,SKCSBase {
         require(msg.value > 0, "invalid amount");
 
         (uint256 num, uint256 dem) = exchangeRate();
-        uint256 shares = msg.value * num / dem;
+        // @audit Fix Item-1: Wrong calculation over user shares
+        uint256 shares = msg.value * dem / num;
 
         _depositKCS(receiver, msg.value, shares);
 
@@ -240,6 +241,9 @@ contract sKCS is IsKCS,SKCSBase {
     /// @param _weight is the weight of validator, _weight ∈ (0, 100]
     function addUnderlyingValidator(address _val, uint256 _weight) external onlyOwner  override {
 
+        // @audit Fix Item 5: Unchecked validator
+        require(VALIDATOR_CONTRACT.isActiveValidator(_val), "active validator only");
+
         require(_val != address(0), "invalid address");
         require(_weight > 0 && _weight <= 100, "invalid weight");
         require(activeValidators.length < MAX_NUM_VALIDATORS,"too many validators");
@@ -270,15 +274,19 @@ contract sKCS is IsKCS,SKCSBase {
            kcsBalances.buffer += _claimPendingRewards(_val);
            if(_validators[_val].stakedKCS > 0 ){
                 VALIDATOR_CONTRACT.revokeVote(_val, _validators[_val].stakedKCS);
+                // @audit Fix Item 3: Unhandled staked amount
+                _validators[_val].actualRedeeming = _validators[_val].stakedKCS;
+                _validators[_val].userRedeeming = 0; 
+                _validators[_val].stakedKCS = 0;
            }
            _disablingPool.add(_val);
 
-           removeUnderlyingValidator(_val);
+           _removeActiveValidator(_val);
            emit DisablingValidator(msg.sender, _val);
        }
     }
 
-    function removeUnderlyingValidator(address _val) internal returns (bool) {
+    function _removeActiveValidator(address _val) internal returns (bool) {
         for (uint8 i = 0; i < activeValidators.length; i++) {
             if (activeValidators[i] == _val) {
                 activeValidators[i] = activeValidators[activeValidators.length - 1];
@@ -316,9 +324,13 @@ contract sKCS is IsKCS,SKCSBase {
 
                 _disablingPool.remove(val);
 
-            } else if (_validators[val].stakedKCS == 0){
+            // @audit Fix Item 3: Unhandled staked amount
+            //  checker actualRedeeming rather than stakedKCS
+            } else if (_validators[val].actualRedeeming == 0){
                 
                 protocolParams.sumOfWeight -= _validators[val].weight;
+                // @audit Fix Item 6: Permanently disabled validator
+                _validators[val] = ValidatorInfo(address(0), 0, 0, 0, 0, 0, 0);
                 _disablingPool.remove(val); 
             }else{
                 i++;   
@@ -365,11 +377,14 @@ contract sKCS is IsKCS,SKCSBase {
         uint256 total;
         uint256 staked;
         uint256 pendingRewards;
+        uint256 residual;
 
         // all staked KCS and all yielded pending rewards
-        (staked, pendingRewards) = _totalAmountOfValidators();
+        (staked, pendingRewards,residual) = _totalAmountOfValidators();
         total += staked;
         total += kcsBalances.buffer;
+        total += residual; // @audit Item 3: Unhandled staked amount
+
         // rewards with fee excluded. 
         (,uint256 rewardsExcludingFee) = _calculateProtocolFee(pendingRewards);
         total += rewardsExcludingFee;
@@ -423,7 +438,7 @@ contract sKCS is IsKCS,SKCSBase {
     /// @notice Get a validator for staking by weight.
     function _getValidatorForStaking() internal returns (address) {
 
-        (uint totalStaked, ) = _totalAmountOfValidators();
+        (uint totalStaked, ,) = _totalAmountOfValidators();
 
         // If no KCS has been staked to any of the validators,
         // simply pick the first validator. 
@@ -518,8 +533,12 @@ contract sKCS is IsKCS,SKCSBase {
     // fall back function
     // 
 
-    receive() external payable{
-        // TODO: event 
+    receive() external payable {
+
+        // @audit Fix Item 7: Implement receive logic
+        require(AddressUpgradeable.isContract(msg.sender), "only contract");
+
+        emit Receive(msg.sender, msg.value);
     }
 
 
@@ -586,7 +605,8 @@ contract sKCS is IsKCS,SKCSBase {
 
         // calculate shares to mint 
         (uint256 num, uint256 dem) = exchangeRate();
-        shares = assets * num / dem;
+        // @audit Fix Item-1: Wrong calculation over user shares
+        shares = assets * dem / num;
 
         _depositKCS(receiver, assets, shares);
 
