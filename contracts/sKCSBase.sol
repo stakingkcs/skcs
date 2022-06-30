@@ -281,7 +281,6 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
             // staked += _validators[val].stakedKCS;  
             // residual += (_validators[val].actualRedeeming - _validators[val].userRedeeming);
             residual += _validators[val].actualRedeeming;
-            
         }
     }
 
