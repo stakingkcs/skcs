@@ -2,7 +2,7 @@
 /* eslint-disable */
 
 import {assert, expect} from "chai";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { CreateContext } from "./context";
 
 describe("EIP4626 function set", function () {
@@ -69,8 +69,10 @@ describe("EIP4626 function set", function () {
 
 
         await context.mineBlocks(3);
+      await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
-        await context.SKCS.processRedemptionRequests();
+
+      await context.SKCS.processRedemptionRequests();
 
         let [a, s] = await context.SKCS.connect(user1).withdrawable(user1.address);
         expect(a).eq(0);
@@ -85,8 +87,10 @@ describe("EIP4626 function set", function () {
         const blocks = 24 * 60 * 60 * 3 / 3 + 1;
 
         await context.mineBlocks(blocks);
+      await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
-        await context.SKCS.processRedemptionRequests();
+
+      await context.SKCS.processRedemptionRequests();
 
 
         [a, s] = await context.SKCS.connect(user1).withdrawable(user1.address);
@@ -154,9 +158,11 @@ describe("EIP4626 function set", function () {
         expect(withrawableKCS).eq(0);
 
         // wait for 3 days 
-        await ctx.mineBlocks(3*24*60*60/3 + 1); 
+        await ctx.mineBlocks(3*24*60*60/3 + 1);
+      await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
-         // process redemption again (i.e withdraw from KCC Staking)
+
+      // process redemption again (i.e withdraw from KCC Staking)
          await sKCS.processRedemptionRequests();  
          
         ({assets:withrawableKCS} = await sKCS.withdrawable(user1.address));

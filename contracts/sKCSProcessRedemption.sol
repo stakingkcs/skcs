@@ -152,7 +152,7 @@ contract sKCSProcessRedemptionsFacet is SKCSBase, IsKCSProcessRedemptionRequests
 
         // execute the redemption 
         // notice: now, there should be no any pending rewards 
-        VALIDATOR_CONTRACT.revokeVote(selectedValidator.val, actualAmountRedeemFromKCCStaking);
+        VALIDATOR_CONTRACT.revokeVote(selectedValidator.val, (actualAmountRedeemFromKCCStaking / VOTE_UNIT));
 
         emit RedeemFromBufferAndKCCStaking(preRedeemingID, box.redeemingID, block.number, amountRedeemFromBuffer + amountRedeemFromKCCStaking);
     }

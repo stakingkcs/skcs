@@ -45,9 +45,8 @@ contract ValidatorsMock is IValidators{
     }
     
     /// @dev msg.sender is sKCS 
-    function revokeVote(address _val, uint256 _amount) external override{
-        uint votes =  _amount / (1 ether);
-        validatorsVotes[_val].votes -= votes; 
+    function revokeVote(address _val, uint256 votes) external override{
+        validatorsVotes[_val].votes -= votes;
         validatorsVotes[_val].revoking += votes;
         totalStaked -= votes;
     }
