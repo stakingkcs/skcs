@@ -2,11 +2,10 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getSignerFromKeystore } from "./keystore";
 import { SKCS__factory } from "../typechain";
 
+const SKCSAddress = "0xbc482CfD97f7083A4b18F93880c75b19Be5a1201";
 
 export async function addUnderlyingValidator(hre:HardhatRuntimeEnvironment, validator:string, weight:bigint) {
-  const SKCSAddress = "0xDF08Cb011FfB6Fe7fE86266112F41f77dcEB0C6f";
   const signer = await getSignerFromKeystore(hre);
-
 
   const skcs = await SKCS__factory.connect(SKCSAddress, signer);
   const activeValidator = await skcs.getActiveValidators();
@@ -21,6 +20,13 @@ export async function addUnderlyingValidator(hre:HardhatRuntimeEnvironment, vali
 
   const after = await skcs.getActiveValidators();
   if (after.length > 0) {
-    console.log(`after add validator, active validator: ${after}`);
+    console.log(`after added a new validator, current active validators: ${after}`);
   }
+}
+
+export async function lisUnderlyingValidators(hre:HardhatRuntimeEnvironment) {
+
+  const validators = await SKCS__factory.connect(SKCSAddress, hre.ethers.provider).getActiveValidators()
+
+  console.log(`current validators: ${validators}`);
 }

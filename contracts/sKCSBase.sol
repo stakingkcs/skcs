@@ -136,7 +136,7 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
 
     /// @notice accumulatedStakedKCSAmount is the accumulative amount of KCS deposited.
     uint256  public  accumulatedStakedKCSAmount;
-    /// @notice accumulatedRewardKCSAmount is the accumulative rewards from KCC Staking.
+    /// @notice accumulatedRewardKCSAmount is the accumulative rewards without pending rewards from KCC Staking.
     uint256  public  accumulatedRewardKCSAmount;
     /// @notice Number of sKCS holders 
     uint256  public  numberOfHolders;
@@ -284,5 +284,23 @@ contract SKCSBase is ReentrancyGuardUpgradeable,OwnableUpgradeable,PausableUpgra
         }
     }
 
+    /// @notice getAccumulatedRewardKCSAmount returns the accumulative rewards from KCC Staking.
+    function getAccumulatedRewardKCSAmount() external view returns (uint256) {
+        return accumulatedRewardKCSAmount + _calculatePendingRewards();
+    }
+
+//    function getRedeemingPoolInfo() external view returns (FifoPool.Pool memory) {
+//        return _redeemingPool;
+//    }
+
+    function getAvailablePoolInfo(address _val) external view returns (bool exist, uint256 len) {
+        exist = _availablePool.contains(_val);
+        len = _availablePool.length();
+    }
+
+    function getDisablingPoolInfo(address _val) external view returns (bool exist, uint256 len) {
+        exist = _disablingPool.contains(_val);
+        len = _disablingPool.length();
+    }
     
 }

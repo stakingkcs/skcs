@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect, use } from "chai";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
 import { CreateContext } from "./context";
 
 describe("Process Redemption Requests (Single Validator)", function () {
@@ -101,9 +101,11 @@ describe("Process Redemption Requests (Single Validator)", function () {
 
 
         // wait for 3 days 
-        await ctx.mineBlocks(3*24*60*60/3 + 1); 
+        await ctx.mineBlocks(3*24*60*60/3 + 1);
+      await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
-        // call processRedemptionRequests Again 
+
+      // call processRedemptionRequests Again
         await sKCS.processRedemptionRequests();
 
         ({assets,shares} = await sKCS.withdrawable(user1.address));
@@ -213,9 +215,11 @@ describe("Process Redemption Requests (Single Validator)", function () {
         expect(shares).eq(sKCSToRedeem);   
 
         // wait for 3 days 
-        await ctx.mineBlocks(3*24*60*60/3 + 1); 
+        await ctx.mineBlocks(3*24*60*60/3 + 1);
+      await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
-        // call processRedemptionRequests Again 
+
+      // call processRedemptionRequests Again
         await sKCS.processRedemptionRequests();
 
         ({assets,shares} = await sKCS.withdrawable(user1.address));
@@ -316,9 +320,11 @@ describe("Process Redemption Requests (Single Validator)", function () {
         expect(shares).eq(sKCSToRedeem);   
 
         // wait for 3 days 
-        await ctx.mineBlocks(3*24*60*60/3 + 1); 
+        await ctx.mineBlocks(3*24*60*60/3 + 1);
+      await network.provider.send('hardhat_setNextBlockBaseFeePerGas', ['0x0']);
 
-        // call processRedemptionRequests Again 
+
+      // call processRedemptionRequests Again
         await sKCS.processRedemptionRequests();
 
         ({assets,shares} = await sKCS.withdrawable(user1.address));

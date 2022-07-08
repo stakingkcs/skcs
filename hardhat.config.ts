@@ -7,7 +7,9 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "@openzeppelin/hardhat-upgrades";
-import { addUnderlyingValidator } from "./scripts/validator";
+import { addUnderlyingValidator, lisUnderlyingValidators } from "./scripts/validator";
+import { compound } from "./scripts/compound";
+import { processRedemption } from "./scripts/processRedemption";
 
 dotenv.config();
 
@@ -28,6 +30,24 @@ task("add-underlying-validator", "add a new validator")
     await hre.run("compile");
     await addUnderlyingValidator(hre, taskArgs.validator, taskArgs.weight);
   });
+
+task("compound", "compound operation")
+  .setAction( async (taskArgs, hre) => {
+    await hre.run("compile");
+    await compound(hre);
+  });
+
+task("process-redeem", "process all redemption requests")
+  .setAction( async (taskArgs, hre) => {
+    await hre.run("compile");
+    await processRedemption(hre);
+  });
+
+task("list-validators", "list all validators")
+  .setAction( async (taskArgs, hre) => {
+    await hre.run("compile");
+    await lisUnderlyingValidators(hre);
+  })
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -57,10 +77,20 @@ const config: HardhatUserConfig = {
     },
     testnet: {
       url: "https://rpc-testnet.kcc.network",
+      chainId: 322,
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+
     },
     mainnet: {
       url: "https://rpc-mainnet.kcc.network",
-    }
+      chainId: 321,
+      accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+
+    },
+
+    hardhat: {
+      allowUnlimitedContractSize: true,
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

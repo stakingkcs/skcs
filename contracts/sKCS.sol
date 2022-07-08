@@ -273,7 +273,7 @@ contract sKCS is IsKCS,SKCSBase {
            _availablePool.remove(_val);
            kcsBalances.buffer += _claimPendingRewards(_val);
            if(_validators[_val].stakedKCS > 0 ){
-                VALIDATOR_CONTRACT.revokeVote(_val, _validators[_val].stakedKCS);
+                VALIDATOR_CONTRACT.revokeVote(_val, (_validators[_val].stakedKCS / VOTE_UNIT));
                 // @audit Fix Item 3: Unhandled staked amount
                 _validators[_val].actualRedeeming = _validators[_val].stakedKCS;
                 _validators[_val].userRedeeming = 0; 
