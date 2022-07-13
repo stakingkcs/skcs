@@ -15,8 +15,7 @@ async function main() {
   const redemption = await ethers.getContractFactory(
     "sKCSProcessRedemptionsFacet"
   );
-  const facet = await upgrades.deployProxy(redemption);
-  await facet.deployed();
+  const facet = await redemption.deploy();
 
   console.log(`facet address: ${facet.address}`);
 
@@ -48,10 +47,7 @@ async function main() {
 
   /*
   *
-  ready to deploy process redemption contract...
-  facet address: 0xe6a6D0B0dA92476d428e6ea33bB013fE1394364f
-  ready to deploy sKCS contract...
-  skcs address: 0xbc482CfD97f7083A4b18F93880c75b19Be5a1201
+
   */
 }
 
