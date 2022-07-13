@@ -89,6 +89,7 @@ contract sKCS is IsKCS,SKCSBase {
     function _depositKCS(address receiver, uint256 amount, uint256 shares) internal nonReentrant whenNotPaused{
 
         kcsBalances.buffer += amount;
+        accumulatedStakedKCSAmount += amount;
         _tryStake();
         
         // @dev mint sKCS
@@ -229,7 +230,7 @@ contract sKCS is IsKCS,SKCSBase {
         
         uint256 rewards = _claimAllPendingRewards();
         kcsBalances.buffer += rewards;
-
+        accumulatedStakedKCSAmount += rewards;
         _tryStake();
         emit Compound(msg.sender, block.timestamp, rewards);
     }
@@ -430,7 +431,6 @@ contract sKCS is IsKCS,SKCSBase {
         kcsBalances.buffer -= staked;
 
         _validators[validator].stakedKCS += staked;
-        accumulatedStakedKCSAmount += staked;
         
         VALIDATOR_CONTRACT.vote{value: staked}(validator);
     }
