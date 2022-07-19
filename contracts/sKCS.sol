@@ -436,7 +436,7 @@ contract sKCS is IsKCS,SKCSBase {
     }
 
     /// @notice Get a validator for staking by weight.
-    function _getValidatorForStaking() internal returns (address) {
+    function _getValidatorForStaking() internal view returns (address) {
 
         (uint totalStaked, ,) = _totalAmountOfValidators();
 
@@ -690,13 +690,13 @@ contract sKCS is IsKCS,SKCSBase {
 
     /// @inheritdoc IERC4626
     /// @notice There is not limit to deposit KCS 
-    function maxDeposit(address owner) external view override returns(uint256) {
+    function maxDeposit(address /* owner */) external view override returns(uint256) {
         return type(uint256).max;
     }
 
     /// @inheritdoc IERC4626
     /// @notice There is not limit to mint sKCS
-    function maxMint(address owner) external view override returns(uint256) {
+    function maxMint(address /* owner */) external view override returns(uint256) {
         return type(uint256).max;
     }
 
