@@ -138,7 +138,7 @@ describe("compound",  function () {
         expect((await context.SKCS.kcsBalances()).fee).to.be.equal(fee);
         expect((await context.SKCS.kcsBalances()).buffer).to.be.equal(buffer);
 
-        expect(await context.SKCS.accumulatedStakedKCSAmount()).to.be.equal(stakedAmount.mul(3).add(increments));
+        expect(await context.SKCS.accumulatedStakedKCSAmount()).to.be.equal(stakedAmount.mul(3).add(increments).add(buffer));
         expect(await context.SKCS.accumulatedRewardKCSAmount()).to.be.equal(pendingAmount.mul(3));
 
     });
