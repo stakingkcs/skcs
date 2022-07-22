@@ -16,11 +16,14 @@ describe("Process Redemption Requests (Multiple Validators)", function () {
     const _40E = ethers.utils.parseUnits("40", "ether");
     const _110E = ethers.utils.parseUnits("110", "ether");
     const _90E = ethers.utils.parseUnits("90", "ether");
+    const _80E = ethers.utils.parseUnits("80", "ether");
     const _10E = ethers.utils.parseUnits("10","ether");
     const _140E = ethers.utils.parseUnits("140","ether");
     const _77E = ethers.utils.parseUnits("77","ether");
     const _50E = ethers.utils.parseUnits("50","ether");
     const _127E = ethers.utils.parseUnits("127","ether");
+    const _210E = ethers.utils.parseUnits("210","ether");
+    const _120E = ethers.utils.parseUnits("120","ether");
     // 0 
     const zero = ethers.constants.Zero;
     // the underlying validators
@@ -328,7 +331,7 @@ describe("Process Redemption Requests (Multiple Validators)", function () {
 
 
     
-    it("Broken binary search",async()=>{
+    it("#7 Broken binary search",async()=>{
 
         // user2 and user3 both transfer their sKCS to user1
         await ctx.SKCS.connect(user2).transfer(user1.address,_100E);
@@ -403,9 +406,9 @@ describe("Process Redemption Requests (Multiple Validators)", function () {
             "RedeemFromBufferAndKCCStaking"
         ).withArgs(
             0, // preRedeemingID
-            2, // new redeemingID, the request with id==2 is partially redeemed
+            1, // new redeemingID, the request with id==1 is partially redeemed
             await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
-            _127E, // 100KCS from KCC Staking + 10 KCS pendingRewards
+            _100E, // 
         );   
         
 
@@ -423,11 +426,76 @@ describe("Process Redemption Requests (Multiple Validators)", function () {
             BigNumber.from(length),
             BigNumber.from(accAmountKCS),
         ]).deep.eq([
-            BigNumber.from(2),
+            BigNumber.from(1),
             BigNumber.from(0),
             BigNumber.from(3),
-            BigNumber.from(_90E.add(_10E).add(_40E))
+            BigNumber.from(_210E)
         ]);
+
+
+        // inspect the partially redeemed request 
+        let {
+            requester,
+            amountSKCS,
+            amountKCS,
+            partiallyRedeemedKCS,
+            accAmountKCSBefore
+        } = await sKCS.getRedemptionRequest(1);
+
+        expect(requester).eq(user1.address);
+        expect(amountSKCS).eq(_110E);
+        expect(amountKCS).eq(_110E);
+        expect(partiallyRedeemedKCS).eq(_90E); // (100 - 10) = 90
+        expect(accAmountKCSBefore).eq(_10E);
+
+        // wait for 1 day
+        await ctx.mineBlocks(24*60*60/3 + 1); 
+
+        await expect(
+            sKCS.processRedemptionRequests()
+        ).emit(
+            sKCS,
+            "RedeemFromBufferAndKCCStaking"
+        ).withArgs(
+            1, // preRedeemingID
+            2, // new redeemingID, the request with id==2 is partially redeemed
+            await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+            _100E, // 
+        );        
+        
+        
+        // inspect box state
+        [
+            redeemingID,
+            withdrawingID,
+            length,
+            accAmountKCS,
+        ] = await sKCS.redemptionRequestBox()
+
+        expect([
+            BigNumber.from(redeemingID),
+            BigNumber.from(length),
+            BigNumber.from(accAmountKCS),
+        ]).deep.eq([
+            BigNumber.from(2),
+            BigNumber.from(3),
+            BigNumber.from(_210E)
+        ]);        
+ 
+        // inspect the partially redeemed request 
+        ({
+            requester,
+            amountSKCS,
+            amountKCS,
+            partiallyRedeemedKCS,
+            accAmountKCSBefore
+        } = await sKCS.getRedemptionRequest(2));
+
+        expect(requester).eq(user1.address);
+        expect(amountSKCS).eq(_90E);
+        expect(amountKCS).eq(_90E);
+        expect(partiallyRedeemedKCS).eq(_80E); // 100 - 20 = 80
+        expect(accAmountKCSBefore).eq(_120E);
 
     });
 

@@ -7,7 +7,9 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "@openzeppelin/hardhat-upgrades";
-
+import { addUnderlyingValidator, lisUnderlyingValidators } from "./scripts/validator";
+import { compound } from "./scripts/compound";
+import { processRedemption } from "./scripts/processRedemption";
 
 dotenv.config();
 
@@ -21,6 +23,31 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+task("add-underlying-validator", "add a new validator")
+  .addParam("validator", "address of validator")
+  .addParam("weight", "weight of validator, [0, 100)")
+  .setAction( async (taskArgs, hre) => {
+    await hre.run("compile");
+    await addUnderlyingValidator(hre, taskArgs.validator, taskArgs.weight);
+  });
+
+task("compound", "compound operation")
+  .setAction( async (taskArgs, hre) => {
+    await hre.run("compile");
+    await compound(hre);
+  });
+
+task("process-redeem", "process all redemption requests")
+  .setAction( async (taskArgs, hre) => {
+    await hre.run("compile");
+    await processRedemption(hre);
+  });
+
+task("list-validators", "list all validators")
+  .setAction( async (taskArgs, hre) => {
+    await hre.run("compile");
+    await lisUnderlyingValidators(hre);
+  })
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
