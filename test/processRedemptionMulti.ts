@@ -14,6 +14,7 @@ describe("Process Redemption Requests (Multiple Validators)", function () {
     // 100 KCS 
     const _100E = ethers.utils.parseUnits("100", "ether");
     const _40E = ethers.utils.parseUnits("40", "ether");
+    const _110E = ethers.utils.parseUnits("110", "ether");
     const _90E = ethers.utils.parseUnits("90", "ether");
     const _10E = ethers.utils.parseUnits("10","ether");
     const _140E = ethers.utils.parseUnits("140","ether");
@@ -327,5 +328,109 @@ describe("Process Redemption Requests (Multiple Validators)", function () {
 
 
     
+    it("Broken binary search",async()=>{
+
+        // user2 and user3 both transfer their sKCS to user1
+        await ctx.SKCS.connect(user2).transfer(user1.address,_100E);
+        await ctx.SKCS.connect(user3).transfer(user1.address,_100E);
+
+        // msg.sender is user1
+        const sKCS = ctx.SKCS.connect(user1);
+        
+        expect(
+            await sKCS.balanceOf(user1.address),
+            "all sKCS has been transferred to user1"
+        ).eq(
+            _100E.mul(3)
+        );
+
+
+        // Make 3 requests for redeeming: 
+        //  1.  10 sKCS 
+        //  2.  110 sKCS 
+        //  3.  90 sKCS 
+        //            = 210 sKCS 
+        // 
+
+        
+        // Redeem 10 sKCS 
+        await expect(
+            sKCS.requestRedemption(_10E,user1.address)
+        ).emit(
+            sKCS,
+            "NewRequestRedemption"
+        ).withArgs(
+            user1.address, // owner 
+            user1.address, // msg.sender
+            0, // id 
+            _10E, // shares
+            _10E, // amount KCS 
+        )
+
+        // Redeem 110 sKCS 
+        await expect(
+            sKCS.requestRedemption(_110E,user1.address)
+        ).emit(
+            sKCS,
+            "NewRequestRedemption"
+        ).withArgs(
+            user1.address, // owner 
+            user1.address, // msg.sender
+            1, // id 
+            _110E, // shares
+            _110E, // amount KCS 
+        )
+
+
+        // Redeem 90 sKCS 
+        await expect(
+            sKCS.requestRedemption(_90E,user1.address)
+        ).emit(
+            sKCS,
+            "NewRequestRedemption"
+        ).withArgs(
+            user1.address, // owner 
+            user1.address, // msg.sender
+            2, // id 
+            _90E, // shares
+            _90E, // amount KCS 
+        )
+
+        await expect(
+            sKCS.processRedemptionRequests()
+        ).emit(
+            sKCS,
+            "RedeemFromBufferAndKCCStaking"
+        ).withArgs(
+            0, // preRedeemingID
+            2, // new redeemingID, the request with id==2 is partially redeemed
+            await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+            _127E, // 100KCS from KCC Staking + 10 KCS pendingRewards
+        );   
+        
+
+        // inspect box state
+        let [
+            redeemingID,
+            withdrawingID,
+            length,
+            accAmountKCS,
+        ] = await sKCS.redemptionRequestBox()
+
+        expect([
+            BigNumber.from(redeemingID),
+            BigNumber.from(withdrawingID),
+            BigNumber.from(length),
+            BigNumber.from(accAmountKCS),
+        ]).deep.eq([
+            BigNumber.from(2),
+            BigNumber.from(0),
+            BigNumber.from(3),
+            BigNumber.from(_90E.add(_10E).add(_40E))
+        ]);
+
+    });
+
+
 
 });
