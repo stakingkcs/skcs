@@ -500,5 +500,536 @@ describe("Process Redemption Requests (Multiple Validators)", function () {
     });
 
 
+  it("redeem amount greater than available validator's amount",async()=>{
+
+    // user2 and user3 both transfer their sKCS to user1
+    await ctx.SKCS.connect(user2).transfer(user1.address,_100E);
+    await ctx.SKCS.connect(user3).transfer(user1.address,_100E);
+
+    // msg.sender is user1
+    const sKCS = ctx.SKCS.connect(user1);
+
+    expect(
+      await sKCS.balanceOf(user1.address),
+      "all sKCS has been transferred to user1"
+    ).eq(
+      _100E.mul(3)
+    );
+
+
+    // Make 3 requests for redeeming:
+    //  1.  110 sKCS
+    //            = 110 sKCS
+    //
+
+
+    // Redeem 110 sKCS
+    await expect(
+      sKCS.requestRedemption(_110E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      0, // id
+      _110E, // shares
+      _110E, // amount KCS
+    )
+
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      0, // preRedeemingID
+      0, // new redeemingID, the request with id==1 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _100E, //
+    );
+
+
+    // inspect box state
+    let [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(withdrawingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(0),
+      BigNumber.from(0),
+      BigNumber.from(1),
+      BigNumber.from(_110E),
+    ]);
+
+
+    // wait for 1 day
+    await ctx.mineBlocks(24*60*60/3 + 1);
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      0, // preRedeemingID
+      1, // new redeemingID, the request with id==2 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _10E, //
+    );
+
+
+    // inspect box state
+    [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(1),
+      BigNumber.from(1),
+      BigNumber.from(_110E)
+    ]);
+
+  });
+
+  it("redeem amount less than available validator's amount",async()=>{
+
+    // user2 and user3 both transfer their sKCS to user1
+    await ctx.SKCS.connect(user2).transfer(user1.address,_100E);
+    await ctx.SKCS.connect(user3).transfer(user1.address,_100E);
+
+    // msg.sender is user1
+    const sKCS = ctx.SKCS.connect(user1);
+
+    expect(
+      await sKCS.balanceOf(user1.address),
+      "all sKCS has been transferred to user1"
+    ).eq(
+      _100E.mul(3)
+    );
+
+
+    // Make 1 requests for redeeming:
+    //  1.  90 sKCS
+    //            = 90 sKCS
+    //
+
+
+    // Redeem 110 sKCS
+    await expect(
+      sKCS.requestRedemption(_90E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      0, // id
+      _90E, // shares
+      _90E, // amount KCS
+    )
+
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      0, // preRedeemingID
+      1, // new redeemingID, the request with id==1 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _90E, //
+    );
+
+
+    // inspect box state
+    let [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(withdrawingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(1),
+      BigNumber.from(0),
+      BigNumber.from(1),
+      BigNumber.from(_90E),
+    ]);
+
+  });
+
+  it("redeem amount equal to available validator's amount",async()=> {
+
+    // user2 and user3 both transfer their sKCS to user1
+    await ctx.SKCS.connect(user2).transfer(user1.address, _100E);
+    await ctx.SKCS.connect(user3).transfer(user1.address, _100E);
+
+    // msg.sender is user1
+    const sKCS = ctx.SKCS.connect(user1);
+
+    expect(
+      await sKCS.balanceOf(user1.address),
+      "all sKCS has been transferred to user1"
+    ).eq(
+      _100E.mul(3)
+    );
+
+
+    // Make 1 requests for redeeming:
+    //  1.  100 sKCS
+    //            = 100 sKCS
+    //
+
+
+    // Redeem 100 sKCS
+    await expect(
+      sKCS.requestRedemption(_100E, user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      0, // id
+      _100E, // shares
+      _100E, // amount KCS
+    )
+
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      0, // preRedeemingID
+      1, // new redeemingID, the request with id==1 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _100E, //
+    );
+
+
+    // inspect box state
+    let [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(withdrawingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(1),
+      BigNumber.from(0),
+      BigNumber.from(1),
+      BigNumber.from(_100E),
+    ]);
+
+
+
+
+  });
+
+
+  it("redeem amount greater than available validator's amount by multi redeem requests",async()=>{
+
+    // user2 and user3 both transfer their sKCS to user1
+    await ctx.SKCS.connect(user2).transfer(user1.address,_100E);
+    await ctx.SKCS.connect(user3).transfer(user1.address,_100E);
+
+    // msg.sender is user1
+    const sKCS = ctx.SKCS.connect(user1);
+
+    expect(
+      await sKCS.balanceOf(user1.address),
+      "all sKCS has been transferred to user1"
+    ).eq(
+      _100E.mul(3)
+    );
+
+
+    // Make 3 requests for redeeming:
+    //  1.  110 sKCS
+    //  2.  100 sKCS
+    //  3.  90  sKCS
+    //
+    //          = 300 sKCS
+    //
+
+
+    // Redeem 110 sKCS
+    await expect(
+      sKCS.requestRedemption(_110E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      0, // id
+      _110E, // shares
+      _110E, // amount KCS
+    )
+
+    await expect(
+      sKCS.requestRedemption(_100E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      1, // id
+      _100E, // shares
+      _100E, // amount KCS
+    )
+
+    await expect(
+      sKCS.requestRedemption(_90E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      2, // id
+      _90E, // shares
+      _90E, // amount KCS
+    )
+
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      0, // preRedeemingID
+      0, // new redeemingID, the request with id==1 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _100E, //
+    );
+
+
+    // inspect box state
+    let [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(withdrawingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(0),
+      BigNumber.from(0),
+      BigNumber.from(3),
+      BigNumber.from(_100E.mul(3)),
+    ]);
+
+
+    // wait for 1 day
+    await ctx.mineBlocks(24*60*60/3 + 1);
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      0, // preRedeemingID
+      1, // new redeemingID, the request with id==2 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _100E, //
+    );
+
+
+    // inspect box state
+    [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(1),
+      BigNumber.from(3),
+      BigNumber.from(_100E.mul(3))
+    ]);
+
+
+    // wait for 1 day
+    await ctx.mineBlocks(24*60*60/3 + 1);
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      1, // preRedeemingID
+      3, // new redeemingID, the request with id==2 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _100E, //
+    );
+
+
+    // inspect box state
+    [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(3),
+      BigNumber.from(3),
+      BigNumber.from(_100E.mul(3))
+    ]);
+
+  });
+
+  it("redeem amount less than available validator's amount by multi redeem requests",async()=>{
+
+    // user2 and user3 both transfer their sKCS to user1
+    await ctx.SKCS.connect(user2).transfer(user1.address,_100E);
+    await ctx.SKCS.connect(user3).transfer(user1.address,_100E);
+
+    // msg.sender is user1
+    const sKCS = ctx.SKCS.connect(user1);
+
+    expect(
+      await sKCS.balanceOf(user1.address),
+      "all sKCS has been transferred to user1"
+    ).eq(
+      _100E.mul(3)
+    );
+
+
+    // Make 3 requests for redeeming:
+    //  1.  10 sKCS
+    //  2.  10 sKCS
+    //  3.  10  sKCS
+    //
+    //          = 30 sKCS
+    //
+
+
+    // Redeem 110 sKCS
+    await expect(
+      sKCS.requestRedemption(_10E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      0, // id
+      _10E, // shares
+      _10E, // amount KCS
+    )
+
+    await expect(
+      sKCS.requestRedemption(_10E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      1, // id
+      _10E, // shares
+      _10E, // amount KCS
+    )
+
+    await expect(
+      sKCS.requestRedemption(_10E,user1.address)
+    ).emit(
+      sKCS,
+      "NewRequestRedemption"
+    ).withArgs(
+      user1.address, // owner
+      user1.address, // msg.sender
+      2, // id
+      _10E, // shares
+      _10E, // amount KCS
+    )
+
+
+    await expect(
+      sKCS.processRedemptionRequests()
+    ).emit(
+      sKCS,
+      "RedeemFromBufferAndKCCStaking"
+    ).withArgs(
+      0, // preRedeemingID
+      3, // new redeemingID, the request with id==1 is partially redeemed
+      await ethers.provider.getBlockNumber() + 1, // block number (hardhat auto-mine mode hack)
+      _10E.mul(3), //
+    );
+
+
+    // inspect box state
+    let [
+      redeemingID,
+      withdrawingID,
+      length,
+      accAmountKCS,
+    ] = await sKCS.redemptionRequestBox()
+
+    expect([
+      BigNumber.from(redeemingID),
+      BigNumber.from(withdrawingID),
+      BigNumber.from(length),
+      BigNumber.from(accAmountKCS),
+    ]).deep.eq([
+      BigNumber.from(3),
+      BigNumber.from(0),
+      BigNumber.from(3),
+      BigNumber.from(_10E.mul(3)),
+    ]);
+  });
+
 
 });
