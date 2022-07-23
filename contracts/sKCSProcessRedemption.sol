@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./sKCSBase.sol";
+import "hardhat/console.sol";
 
 /// @dev sKCSProcessRedemptionsFacet implement the logics for
 ///      processing redemption requests 
@@ -96,7 +97,16 @@ contract sKCSProcessRedemptionsFacet is SKCSBase, IsKCSProcessRedemptionRequests
         //     ID == newRedeemingID may be only paritially redeemed or not be redeemed. 
         uint256 newRedeemingID = _findNewRedeemingID(amountAvailable);
         
-        if(newRedeemingID < box.length){
+        if (newRedeemingID == box.redeemingID){
+
+            // The request with ID == box.redeemingID is partially redeemed 
+            box.requests[newRedeemingID].partiallyRedeemedKCS += amountAvailable;
+
+            require(box.requests[newRedeemingID].partiallyRedeemedKCS < box.requests[newRedeemingID].amountKCS,"PR001");
+
+            amountRedeemFromKCCStaking  = amountAvailable - kcsBalances.buffer;
+
+        } else if(newRedeemingID < box.length){
             // newRedeemingID < box.length
             // only some of the pending requests in the RedemptionRequestBox can be redeemed.
 
@@ -239,15 +249,34 @@ contract sKCSProcessRedemptionsFacet is SKCSBase, IsKCSProcessRedemptionRequests
             while(L != H){
                 uint256 M = MathUpgradeable.ceilDiv(L + H, 2);
 
-                // accumulated amount from box.redeemingID to M - 1
-                // preCondition M != L
-                uint256 accAmount = box.requests[M].accAmountKCSBefore 
-                        - box.requests[box.redeemingID].accAmountKCSBefore 
-                        - box.requests[box.redeemingID].partiallyRedeemedKCS;
-                if (accAmount >= amountAvailable){
+                // accumulated amount from box.redeemingID to M
+                uint accAmount = 0;
+                if( M == box.length - 1){
+                    accAmount = box.accAmountKCS 
+                                - box.requests[box.redeemingID].accAmountKCSBefore 
+                                - box.requests[box.redeemingID].partiallyRedeemedKCS;
+                }else{
+                    accAmount = box.requests[M+1].accAmountKCSBefore 
+                                - box.requests[box.redeemingID].accAmountKCSBefore 
+                                - box.requests[box.redeemingID].partiallyRedeemedKCS;                                
+                }
+
+                if (accAmount > amountAvailable){
                     H = M;
                 }else{
                     L = M;
+                }
+
+                // special case 
+                if( H == L + 1){
+                    accAmount = box.requests[L+1].accAmountKCSBefore 
+                                - box.requests[box.redeemingID].accAmountKCSBefore 
+                                - box.requests[box.redeemingID].partiallyRedeemedKCS;  
+                    if (accAmount > amountAvailable){
+                        H = L;
+                    }else{
+                        L = H;
+                    }
                 }
             }
 
